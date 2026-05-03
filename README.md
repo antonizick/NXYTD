@@ -261,4 +261,4 @@ MIT
 
 ## Screenshots
 
-![NXYTDL Screenshot](https://drive.google.com/uc?export=view&id=1CgB0cHnmADpx_0UH9f8_K8GUiQmjC8aw)
+![NXYTDL Screenshot](screenshots/YTDL%202026-05-03%2013_29_06-Settings.png)
