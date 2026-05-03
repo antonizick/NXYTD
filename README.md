@@ -256,3 +256,9 @@ Selection is only cleared on full success (zero errors). If any item fails, sele
 ## License
 
 MIT
+
+---
+
+## Screenshots
+
+![NXYTDL Screenshot](https://drive.google.com/uc?export=view&id=1CgB0cHnmADpx_0UH9f8_K8GUiQmjC8aw)
