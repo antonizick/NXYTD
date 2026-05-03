@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NXYTDL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
+  <style>
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline-flex; }
+    .htmx-request.htmx-indicator { display: inline-flex; }
+    body { background-color: #070e1c; }
+  </style>
+</head>
+<body class="text-gray-100 min-h-screen font-sans">
+
+  <!-- ── Nav ── -->
+  <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-lg">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center gap-3">
+      <span class="text-blue-700 text-2xl font-black tracking-tight">NXYTDL</span>
+      <span class="text-gray-500 text-sm font-medium">YouTube Downloader</span>
+      <div class="flex-1"></div>
+      <button onclick="location.reload()"
+              title="Refresh page"
+              class="text-gray-500 hover:text-gray-300 transition p-1.5 rounded-lg hover:bg-slate-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M4.582 9A8 8 0 0120 15M19.419 15A8 8 0 014 9" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+
+    <!-- ── Search ── -->
+    <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
+      <h2 class="text-lg font-semibold text-gray-200 mb-4">Search YouTube</h2>
+      <form hx-post="/search"
+            hx-target="#search-results"
+            hx-swap="innerHTML"
+            hx-indicator="#search-spinner">
+        <div class="flex gap-3">
+          <input type="text" name="query"
+                 placeholder="Search for videos, artists, playlists…"
+                 class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-base
+                        focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+                        placeholder-gray-600 transition"
+                 autocomplete="off" required />
+          <button type="submit"
+                  class="bg-blue-800 hover:bg-blue-700 active:bg-blue-900 px-6 py-3 rounded-xl
+                         font-semibold transition flex items-center gap-2 whitespace-nowrap">
+            <span id="search-spinner" class="htmx-indicator items-center">
+              <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+            </span>
+            Search
+          </button>
+        </div>
+      </form>
+      <div id="search-results" class="mt-5"></div>
+    </section>
+
+    <!-- ── Manual Add ── -->
+    <div class="border-t border-slate-800"></div>
+    <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
+      <h2 class="text-lg font-semibold text-gray-200 mb-4">Manually Add</h2>
+      <div class="flex gap-3">
+        <input type="text" id="manual-url-input"
+               placeholder="Paste a YouTube URL…"
+               class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-base
+                      focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+                      placeholder-gray-600 transition"
+               autocomplete="off"
+               onkeydown="if(event.key==='Enter') addManualUrl()" />
+        <button id="manual-add-btn" onclick="addManualUrl()"
+                class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-6 py-3 rounded-xl
+                       font-semibold transition flex items-center gap-2 whitespace-nowrap
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg id="manual-spinner" class="hidden animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <span id="manual-add-text">Add</span>
+        </button>
+      </div>
+      <!-- Playlist choice prompt (shown dynamically) -->
+      <div id="playlist-prompt" class="hidden mt-3"></div>
+    </section>
+
+    <!-- ── Divider ── -->
+    <div class="flex items-center gap-4">
+      <div class="flex-1 border-t border-slate-800"></div>
+      <span class="text-gray-600 text-xs uppercase tracking-widest">Current Selection</span>
+      <div class="flex-1 border-t border-slate-800"></div>
+    </div>
+
+    <!-- ── Selection ── -->
+    <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
+      <div id="selection-container">
+        {% include "partials/selection_table.html" %}
+      </div>
+    </section>
+
+    <!-- ── Progress (hidden until download starts) ── -->
+    <section id="progress-section" class="hidden bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
+      <h2 class="text-lg font-semibold text-gray-200 mb-4">Download Progress</h2>
+      <div id="progress-container"></div>
+    </section>
+
+    <!-- ── Divider ── -->
+    <div class="flex items-center gap-4">
+      <div class="flex-1 border-t border-slate-800"></div>
+      <span class="text-gray-600 text-xs uppercase tracking-widest">Previous Downloads</span>
+      <div class="flex-1 border-t border-slate-800"></div>
+    </div>
+
+    <!-- ── Previous Downloads ── -->
+    <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
+      <div id="downloads-container">
+        {% include "partials/downloads_table.html" %}
+      </div>
+    </section>
+
+    <!-- ── Divider ── -->
+    <div class="flex items-center gap-4">
+      <div class="flex-1 border-t border-slate-800"></div>
+      <span class="text-gray-600 text-xs uppercase tracking-widest">All Files on Disk</span>
+      <div class="flex-1 border-t border-slate-800"></div>
+    </div>
+
+    <!-- ── File Browser ── -->
+    <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
+      <h2 class="text-lg font-semibold text-gray-200 mb-4">File Browser</h2>
+      <div id="files-container"
+           hx-get="/files"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <p class="text-gray-600 animate-pulse text-sm">Loading files…</p>
+      </div>
+    </section>
+
+  <!-- ── Footer ── -->
+  <div class="max-w-6xl mx-auto px-4 pb-8 pt-2 flex justify-end">
+    <a href="/log" target="_blank" rel="noopener"
+       class="text-gray-600 hover:text-gray-400 text-xs font-mono transition flex items-center gap-1.5">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      uvicorn.log
+    </a>
+  </div>
+
+  </div><!-- /max-w -->
+
+<script>
+// ── Add selected search results to the list ──────────────────────────────────
+function addSelectedToList() {
+  const boxes = document.querySelectorAll('.result-cb:checked');
+  if (!boxes.length) { showToast('No items checked.', 'warn'); return; }
+  const items = Array.from(boxes).map(cb => ({ title: cb.dataset.title, url: cb.dataset.url, duration: cb.dataset.duration || '' }));
+  fetch('/selection/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'items=' + encodeURIComponent(JSON.stringify(items))
+  })
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('selection-container').innerHTML = html;
+    boxes.forEach(cb => cb.checked = false);
+    showToast(`Added ${items.length} item(s) to list.`, 'ok');
+  })
+  .catch(() => showToast('Failed to add items.', 'err'));
+}
+
+// ── Toggle all checkboxes ────────────────────────────────────────────────────
+function toggleAll(source) {
+  document.querySelectorAll('.result-cb').forEach(cb => cb.checked = source.checked);
+}
+
+// ── Remove item from selection ───────────────────────────────────────────────
+function deleteSelectionItem(itemId) {
+  if (!confirm('Remove this item from the list?')) return;
+  fetch(`/selection/${itemId}`, { method: 'DELETE' })
+    .then(r => r.text())
+    .then(html => { document.getElementById('selection-container').innerHTML = html; });
+}
+
+function clearSelection() {
+  if (!confirm('Remove all items from the current selection?')) return;
+  fetch('/selection', { method: 'DELETE' })
+    .then(r => r.text())
+    .then(html => { document.getElementById('selection-container').innerHTML = html; });
+}
+
+// ── Start download ───────────────────────────────────────────────────────────
+function startDownload() {
+  const listName = document.getElementById('list-name-input')?.value.trim();
+  const quality  = document.getElementById('quality-select')?.value;
+  if (!listName) {
+    showToast('Enter a list name first.', 'warn');
+    document.getElementById('list-name-input')?.focus();
+    return;
+  }
+  const fd = new FormData();
+  fd.append('list_name', listName);
+  fd.append('quality', quality);
+
+  fetch('/download/start', { method: 'POST', body: fd })
+    .then(r => {
+      if (!r.ok) return r.json().then(d => { throw new Error(d.detail || 'Server error'); });
+      return r.json();
+    })
+    .then(({ job_id }) => {
+      const sec = document.getElementById('progress-section');
+      sec.classList.remove('hidden');
+      sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const wrap = document.getElementById('progress-container');
+      wrap.innerHTML = `<div id="poll-${job_id}"
+        hx-get="/download/progress/${job_id}"
+        hx-trigger="load, every 2s"
+        hx-target="this"
+        hx-swap="outerHTML"></div>`;
+      htmx.process(wrap);
+    })
+    .catch(e => showToast(e.message, 'err'));
+}
+
+// ── Refresh downloads table (called from progress partial on completion) ──────
+function refreshDownloads() {
+  fetch('/downloads').then(r => r.text()).then(html => {
+    document.getElementById('downloads-container').innerHTML = html;
+  });
+}
+
+// ── Refresh selection table (called after download clears it) ─────────────────
+function refreshSelection() {
+  fetch('/selection').then(r => r.text()).then(html => {
+    document.getElementById('selection-container').innerHTML = html;
+  });
+}
+
+// ── File browser: delete single file ────────────────────────────────────────
+function deleteFile(relPath, btn) {
+  const name = relPath.split('/').pop();
+  if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
+  btn.disabled = true;
+  fetch('/files/single?p=' + encodeURIComponent(relPath), { method: 'DELETE' })
+    .then(r => r.text())
+    .then(html => { document.getElementById('files-container').innerHTML = html; })
+    .catch(() => { showToast('Delete failed.', 'err'); btn.disabled = false; });
+}
+
+// ── File browser: delete entire folder ──────────────────────────────────────
+function deleteFolder(relPath, count) {
+  const name = relPath.split('/').pop() || relPath;
+  if (!confirm(
+    `Delete folder "${name}" and all ${count} file(s) inside?\n\nThis cannot be undone.`
+  )) return;
+  fetch('/files/folder?p=' + encodeURIComponent(relPath), { method: 'DELETE' })
+    .then(r => r.text())
+    .then(html => { document.getElementById('files-container').innerHTML = html; })
+    .catch(() => showToast('Delete failed.', 'err'));
+}
+
+// ── File browser: delete all files ───────────────────────────────────────────
+function deleteAllFiles(count) {
+  if (!confirm(
+    `Permanently delete ALL ${count} file(s) from ~/YouTubeDownloads?\n\n` +
+    `This removes every downloaded file, folder, and zip — including items shown in Previous Downloads above.\n\n` +
+    `This cannot be undone.`
+  )) return;
+  fetch('/files/all', { method: 'DELETE' })
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('files-container').innerHTML = html;
+      refreshDownloads();
+      refreshSelection();
+    })
+    .catch(() => showToast('Delete all failed.', 'err'));
+}
+
+// ── Zip already-downloaded files without re-downloading ─────────────────────
+function zipExisting() {
+  const name = document.getElementById('list-name-input')?.value.trim();
+  if (!name) { showToast('Enter a list name first.', 'warn'); return; }
+  const sec = document.getElementById('progress-section');
+  sec.classList.remove('hidden');
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('progress-container').innerHTML =
+    '<p class="text-gray-400 animate-pulse p-4">Zipping existing files…</p>';
+  fetch('/download/zip-existing', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'name=' + encodeURIComponent(name),
+  })
+  .then(r => r.text())
+  .then(html => { document.getElementById('progress-container').innerHTML = html; })
+  .catch(() => showToast('Zip request failed.', 'err'));
+}
+
+// ── Delete a previous download ────────────────────────────────────────────────
+function deleteDownload(zipFile) {
+  if (!confirm(`Delete "${zipFile}" and its extracted folder?\nThis cannot be undone.`)) return;
+  fetch(`/downloads/${encodeURIComponent(zipFile)}`, { method: 'DELETE' })
+    .then(r => r.text())
+    .then(html => { document.getElementById('downloads-container').innerHTML = html; });
+}
+
+// ── Playlist URL helpers ──────────────────────────────────────────────────────
+let _pendingPlaylistUrl = null;
+
+function _getListId(url) {
+  try { return new URL(url).searchParams.get('list'); } catch { return null; }
+}
+function _hasVideoId(url) {
+  try {
+    const u = new URL(url);
+    return u.searchParams.has('v') || /youtu\.be\/[a-zA-Z0-9_-]{11}/.test(url);
+  } catch { return false; }
+}
+function _stripList(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('list');
+    u.searchParams.delete('index');
+    return u.toString();
+  } catch { return url; }
+}
+
+function showPlaylistPrompt(url, listId, hasVideo) {
+  _pendingPlaylistUrl = url;
+  const prompt = document.getElementById('playlist-prompt');
+  const shortId = listId.length > 24 ? listId.slice(0, 24) + '…' : listId;
+  prompt.innerHTML = `
+    <div class="bg-slate-800/80 border border-blue-700/60 rounded-xl p-4 space-y-3">
+      <p class="text-sm text-gray-300">
+        <span class="text-blue-400 font-semibold">&#x1F4CB; Playlist detected</span>
+        &mdash; this URL includes playlist
+        <code class="text-blue-300 font-mono text-xs bg-slate-700 px-1 py-0.5 rounded">${shortId}</code>.
+        What would you like to add?
+      </p>
+      <div class="flex gap-3 flex-wrap items-center">
+        ${hasVideo ? `
+        <button onclick="addSingleFromPrompt()"
+                class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-4 py-2 rounded-xl
+                       text-sm font-semibold transition">
+          This video only
+        </button>` : ''}
+        <button id="add-playlist-btn" onclick="addFullPlaylistFromPrompt()"
+                class="bg-slate-600 hover:bg-slate-500 active:bg-slate-700 px-4 py-2 rounded-xl
+                       text-sm font-semibold transition flex items-center gap-2
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg id="playlist-load-spinner" class="hidden animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Add full playlist
+        </button>
+        <button onclick="dismissPlaylistPrompt()"
+                class="text-gray-500 hover:text-gray-300 px-3 py-2 text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </div>`;
+  prompt.classList.remove('hidden');
+}
+
+function dismissPlaylistPrompt() {
+  const p = document.getElementById('playlist-prompt');
+  p.classList.add('hidden');
+  p.innerHTML = '';
+  _pendingPlaylistUrl = null;
+}
+
+function addSingleFromPrompt() {
+  const url = _stripList(_pendingPlaylistUrl);
+  dismissPlaylistPrompt();
+  document.getElementById('manual-url-input').value = url;
+  _submitManualUrl(url);
+}
+
+function addFullPlaylistFromPrompt() {
+  const url = _pendingPlaylistUrl;
+  const btn = document.getElementById('add-playlist-btn');
+  const spinner = document.getElementById('playlist-load-spinner');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+
+  const fd = new FormData();
+  fd.append('url', url);
+  fetch('/selection/add-playlist', { method: 'POST', body: fd })
+    .then(r => {
+      if (!r.ok) return r.json().then(d => { throw new Error(d.detail || 'Server error'); });
+      return r.text();
+    })
+    .then(html => {
+      dismissPlaylistPrompt();
+      document.getElementById('selection-container').innerHTML = html;
+      document.getElementById('manual-url-input').value = '';
+      showToast('Playlist added to list.', 'ok');
+    })
+    .catch(e => {
+      showToast(e.message || 'Failed to add playlist.', 'err');
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+    });
+}
+
+// ── Manually add a URL to the selection ──────────────────────────────────────
+function addManualUrl() {
+  const input = document.getElementById('manual-url-input');
+  const url = input.value.trim();
+  if (!url) { showToast('Paste a YouTube URL first.', 'warn'); return; }
+
+  const listId = _getListId(url);
+  if (listId) {
+    showPlaylistPrompt(url, listId, _hasVideoId(url));
+    return;
+  }
+  _submitManualUrl(url);
+}
+
+function _submitManualUrl(url) {
+  const btn     = document.getElementById('manual-add-btn');
+  const spinner = document.getElementById('manual-spinner');
+  const label   = document.getElementById('manual-add-text');
+
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  spinner.classList.add('inline-block');
+  label.textContent = 'Looking up…';
+
+  const fd = new FormData();
+  fd.append('url', url);
+
+  fetch('/selection/add-url', { method: 'POST', body: fd })
+    .then(r => {
+      if (!r.ok) return r.json().then(d => { throw new Error(d.detail || 'Server error'); });
+      return r.text();
+    })
+    .then(html => {
+      document.getElementById('selection-container').innerHTML = html;
+      document.getElementById('manual-url-input').value = '';
+      showToast('Added to list.', 'ok');
+    })
+    .catch(e => showToast(e.message || 'Failed to add URL.', 'err'))
+    .finally(() => {
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+      spinner.classList.remove('inline-block');
+      label.textContent = 'Add';
+    });
+}
+
+// ── Toast notification ────────────────────────────────────────────────────────
+function showToast(msg, type='ok') {
+  const colors = { ok: 'bg-green-700', warn: 'bg-yellow-700', err: 'bg-red-700' };
+  const t = document.createElement('div');
+  t.className = `fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium
+                 ${colors[type] || colors.ok} text-white transition-opacity duration-300`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+</script>
+</body>
+</html>

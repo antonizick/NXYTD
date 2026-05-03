@@ -1,0 +1,65 @@
+{% if results %}
+<div>
+  <div class="flex items-center justify-between mb-3">
+    <p class="text-sm text-gray-400">{{ results | length }} result(s) for <span class="text-gray-200">"{{ query }}"</span></p>
+    <button onclick="addSelectedToList()"
+            class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-4 py-2 rounded-lg
+                   text-sm font-semibold transition flex items-center gap-1">
+      + Add Selected to List
+    </button>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-slate-800">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-800/60 text-gray-400 text-xs uppercase tracking-wide">
+          <th class="py-3 px-3 text-center w-8">
+            <input type="checkbox" class="w-4 h-4 accent-blue-500 cursor-pointer"
+                   onchange="toggleAll(this)" title="Select all" />
+          </th>
+          <th class="py-3 px-3 text-left">Title</th>
+          <th class="py-3 px-3 text-left hidden sm:table-cell">Channel</th>
+          <th class="py-3 px-3 text-left hidden sm:table-cell">Duration</th>
+          <th class="py-3 px-3 text-left w-16">Link</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800">
+        {% for r in results %}
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="py-3 px-3 text-center">
+            <input type="checkbox" class="result-cb w-4 h-4 accent-blue-500 cursor-pointer"
+                   data-title="{{ r.title | e }}"
+                   data-url="{{ r.url }}"
+                   data-duration="{{ r.duration | e }}" />
+          </td>
+          <td class="py-3 px-3 max-w-xs">
+            <span class="line-clamp-2 leading-snug" title="{{ r.title | e }}">{{ r.title }}</span>
+          </td>
+          <td class="py-3 px-3 text-gray-500 text-xs hidden sm:table-cell truncate max-w-[160px]">
+            {{ r.channel }}
+          </td>
+          <td class="py-3 px-3 text-gray-500 text-xs hidden sm:table-cell">{{ r.duration }}</td>
+          <td class="py-3 px-3">
+            <a href="{{ r.url }}" target="_blank" rel="noopener"
+               class="text-blue-400 hover:text-blue-300 text-xs underline underline-offset-2">
+              Watch
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-3 flex justify-end">
+    <button onclick="addSelectedToList()"
+            class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-5 py-2 rounded-lg
+                   font-semibold transition text-sm">
+      + Add Selected to List
+    </button>
+  </div>
+</div>
+
+{% elif results is defined %}
+<p class="text-center text-gray-600 py-6">No results found for <em>"{{ query }}"</em>.</p>
+{% endif %}

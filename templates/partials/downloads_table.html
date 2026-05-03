@@ -1,0 +1,58 @@
+{% if downloads %}
+<div class="overflow-x-auto rounded-xl border border-slate-800">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-slate-800/60 text-gray-400 text-xs uppercase tracking-wide">
+        <th class="py-3 px-4 text-left">Name</th>
+        <th class="py-3 px-4 text-left hidden sm:table-cell">Date</th>
+        <th class="py-3 px-4 text-left hidden sm:table-cell">Size</th>
+        <th class="py-3 px-4 text-center hidden sm:table-cell">Items</th>
+        <th class="py-3 px-4 text-left">Download</th>
+        <th class="py-3 px-4 text-center w-24">Delete</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-800">
+      {% for dl in downloads %}
+      {% set mb = (dl.size / 1048576) | round(1) %}
+      <tr class="hover:bg-slate-800/40 transition">
+        <td class="py-3 px-4 font-medium">
+          {{ dl.name }}
+          {% if dl.errors and dl.errors > 0 %}
+          <span class="ml-1 text-xs text-yellow-600" title="{{ dl.errors }} download error(s)">
+            ⚠ {{ dl.errors }}
+          </span>
+          {% endif %}
+        </td>
+        <td class="py-3 px-4 text-gray-500 text-xs hidden sm:table-cell">
+          {{ dl.date[:10] }} {{ dl.date[11:16] }}
+        </td>
+        <td class="py-3 px-4 text-gray-400 text-xs hidden sm:table-cell">
+          {% if mb >= 1024 %}{{ (mb / 1024) | round(2) }} GB
+          {% else %}{{ mb }} MB{% endif %}
+        </td>
+        <td class="py-3 px-4 text-gray-400 text-center hidden sm:table-cell">{{ dl.count }}</td>
+        <td class="py-3 px-4">
+          <a href="/downloads/{{ dl.zip_file | urlencode }}/file"
+             class="text-green-400 hover:text-green-300 underline underline-offset-2 text-xs">
+            ↓ {{ dl.zip_file }}
+          </a>
+        </td>
+        <td class="py-3 px-4 text-center">
+          <button onclick="deleteDownload('{{ dl.zip_file | e }}')"
+                  class="text-red-500 hover:text-red-400 text-xs px-2.5 py-1 rounded-lg
+                         border border-red-900 hover:border-red-600 transition">
+            Delete All
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="text-center py-12">
+  <div class="text-5xl mb-3">📂</div>
+  <p class="text-gray-600">No previous downloads yet.</p>
+</div>
+{% endif %}

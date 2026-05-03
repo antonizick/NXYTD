@@ -1,0 +1,86 @@
+# ── Sensitive / credentials ────────────────────────────────────────────────────
+# Contains proxy URL and Firefox profile path — never commit
+data/config.json
+
+# ── Runtime state ─────────────────────────────────────────────────────────────
+# These files change every run and contain no source-of-truth information
+data/current_selection.json
+data/downloads.json
+data/currentBU.json
+
+# ── Process management ────────────────────────────────────────────────────────
+.uvicorn.pid
+uvicorn.log
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+coverage.xml
+nosetests.xml
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+.pytype/
+
+# ── Downloaded media ──────────────────────────────────────────────────────────
+# Never commit downloaded content
+*.mkv
+*.mp4
+*.webm
+*.mp3
+*.m4a
+*.ogg
+*.opus
+*.flac
+*.wav
+*.zip
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Claude Code internal tooling ──────────────────────────────────────────────
+.claude/

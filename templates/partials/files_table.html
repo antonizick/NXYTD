@@ -1,0 +1,108 @@
+{% if total_files == 0 %}
+<div class="text-center py-12 text-gray-600">
+  <div class="text-4xl mb-3">&#x1F5C2;</div>
+  <p class="text-gray-500">No files on disk.</p>
+</div>
+{% else %}
+
+<!-- Header row -->
+<div class="flex items-center justify-between mb-4">
+  <p class="text-sm text-gray-500">
+    <span class="text-gray-300 font-semibold">{{ total_files }}</span> file(s) &nbsp;&middot;&nbsp;
+    <span class="text-gray-300 font-semibold">{{ total_size }}</span> total
+  </p>
+  <button onclick="deleteAllFiles({{ total_files }})"
+          class="bg-red-900 hover:bg-red-800 active:bg-red-950 text-red-200 hover:text-white
+                 px-4 py-2 rounded-xl text-sm font-semibold transition border border-red-700
+                 flex items-center gap-2">
+    &#x1F5D1; Delete all files
+  </button>
+</div>
+
+<!-- One collapsible block per folder -->
+{% for group in groups %}
+<details open class="mb-3 rounded-xl border border-slate-800 overflow-hidden">
+
+  <summary class="bg-slate-800/60 px-4 py-3 text-xs uppercase tracking-wide text-gray-400
+                  cursor-pointer select-none flex items-center justify-between hover:bg-slate-800">
+    <span>&#x1F4C1; {{ group.folder }}</span>
+    <div class="flex items-center gap-3" onclick="event.stopPropagation()">
+      <span class="text-gray-600 normal-case tracking-normal font-normal">
+        {{ group.files | length }} file(s)
+      </span>
+      <button data-folder="{{ group.folder | e }}"
+              data-count="{{ group.files | length }}"
+              onclick="deleteFolder(this.dataset.folder, parseInt(this.dataset.count))"
+              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
+                     bg-red-900/30 hover:bg-red-700 text-red-500 hover:text-white
+                     transition border border-red-900 hover:border-red-600 text-xs normal-case
+                     tracking-normal font-semibold"
+              title="Delete folder">
+        &#x1F5D1; Delete folder
+      </button>
+    </div>
+  </summary>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-gray-600 text-xs uppercase tracking-wide border-b border-slate-800">
+          <th class="py-2 px-4 text-left">Filename</th>
+          <th class="py-2 px-4 text-right w-28">Size</th>
+          <th class="py-2 px-4 text-center w-12">Play</th>
+          <th class="py-2 px-4 text-center w-12">Get</th>
+          <th class="py-2 px-4 text-center w-12">Del</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800/60">
+        {% for file in group.files %}
+        <tr class="hover:bg-slate-800/30 transition">
+          <td class="py-2.5 px-4 max-w-sm">
+            <span class="truncate block leading-snug text-gray-200"
+                  title="{{ file.name | e }}">{{ file.name }}</span>
+          </td>
+          <td class="py-2.5 px-4 text-right text-gray-500 whitespace-nowrap font-mono text-xs">
+            {{ file.size_fmt }}
+          </td>
+          <!-- Play in new tab -->
+          <td class="py-2.5 px-4 text-center">
+            <a href="/files/play?p={{ file.rel_path | urlencode }}"
+               target="_blank" rel="noopener"
+               class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                      bg-indigo-900/40 hover:bg-indigo-600 text-indigo-400 hover:text-white
+                      transition border border-indigo-900 hover:border-indigo-500"
+               title="Play {{ file.name | e }}">
+              &#x25B6;
+            </a>
+          </td>
+          <!-- Download -->
+          <td class="py-2.5 px-4 text-center">
+            <a href="/files/download?p={{ file.rel_path | urlencode }}"
+               download="{{ file.name | e }}"
+               class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                      bg-green-900/40 hover:bg-green-700 text-green-400 hover:text-white
+                      transition border border-green-900 hover:border-green-600"
+               title="Download {{ file.name | e }}">
+              &#x2193;
+            </a>
+          </td>
+          <!-- Delete file -->
+          <td class="py-2.5 px-4 text-center">
+            <button data-path="{{ file.rel_path | e }}"
+                    onclick="deleteFile(this.dataset.path, this)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                           bg-red-900/30 hover:bg-red-700 text-red-500 hover:text-white
+                           transition border border-red-900 hover:border-red-600"
+                    title="Delete {{ file.name | e }}">
+              &#x1F5D1;
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endfor %}
+
+{% endif %}
