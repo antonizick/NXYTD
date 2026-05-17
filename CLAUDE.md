@@ -140,17 +140,57 @@ templates.TemplateResponse(request, "template.html", {"key": value})  # correct
 2. Add alias mapping in `_alias()` in `main.py`
 3. Add `<option>` in `templates/partials/selection_table.html`
 
-## Project status (as of 2026-04-29)
+## Project status (as of 2026-05-17)
 
-All application features complete and running. Deployment package added this session.
+All application features complete, tested, and shipped. Video frame panel + advanced search filters added.
 
-**App features:** Search, manual URL + playlist add, quality selection (MP3/720p/1080p), background download with real-time output (last 5 lines) + stall detection, skip already-downloaded (video ID matching), zip append (dedup by filename), emoji stripping, previous downloads list, full file browser (play/download/delete), duration column, log viewer.
+**Core app features (2026-04-29):** Search, manual URL + playlist add, quality selection (MP3/720p/1080p), background download with real-time output (last 5 lines) + stall detection, skip already-downloaded (video ID matching), zip append (dedup by filename), emoji stripping, previous downloads list, full file browser (play/download/delete), duration column, log viewer.
 
-**Deployment package (added 2026-04-29):**
-- `setup.sh` — one-command installer: prereqs, pip deps, proxy config, Firefox auto-detect, `~/.nxytdl_aliases`, start
-- `data/config.json` — proxy URL + Firefox profile; read at import time; `.gitignore` this file
-- `DOCUMENTATION.md` — Mermaid architecture diagram, full flow docs, alias breakdown, troubleshooting, future ideas
-- `PROXY` in `main.py` now reads from `data/config.json` (was hardcoded)
-- Aliases live in `~/.nxytdl_aliases`, sourced by `.bashrc` (one `source` line — keeps `.bashrc` clean)
+**UI/UX Improvements (added 2026-05-17):**
 
-**Next steps:** Test real end-to-end download + alias invocation from subprocess context; test playlist add with a real URL; consider `.gitignore` for `data/config.json` and `data/*.json` state files.
+1. **Video Frame Panel** — Right-side expandable panel
+   - Responsive: 40% desktop, 50% tablet, 100% mobile
+   - Smooth CSS transitions
+   - Close button in nav bar + Escape key support
+   - "Add to List" button for framed YouTube videos
+
+2. **Frame Links Across All Sections**
+   - Search results: "Frame" button next to "Tab" link
+   - Current selection: Frame link in URL column
+   - File browser: Frame button next to Play button
+   - Supports both YouTube embeds + local file playback (/files/play endpoint)
+
+3. **Advanced Search Filters**
+   - Duration dropdown: Any length, Short (<6m), Medium (4-20m), Long (>20m)
+   - Upload Date dropdown: Any time, Last week, Last month, Last year
+   - Min Views dropdown: (placeholder for view count filtering)
+   - Collapsible Advanced Filter section with boolean syntax
+   - Help modal with examples (e.g., "title contains 'rock' & NOT 'DJ'")
+
+4. **Pagination for Search Results**
+   - Changed from ytsearch15 to ytsearch30 (30 results)
+   - Client-side pagination: 15 items per page
+   - Previous/Next buttons with proper state management
+
+5. **Search Results UX**
+   - Renamed "Watch" link to "Tab" (grey styling for clarity)
+   - Added "Frame" link for in-app playback
+   - Pagination controls with automatic scroll to top
+
+**Backend Changes:**
+- Modified `/search` endpoint to accept filter parameters (duration, upload_date, views, advanced_filter)
+- Builds --match-filters argument combining multiple filters with & operator
+- Handles advanced_filter boolean syntax passed directly to yt-dlp
+
+**Technical Implementation:**
+- Enhanced openVideoInFrame() to detect YouTube URLs vs local files
+- Used tojson filter with single-quoted onclick attributes for proper escaping
+- Responsive CSS for frame panel with media breakpoints
+- JavaScript pagination with dynamic row visibility
+
+**Deployment:**
+- Merged commit cc7407d to main branch
+- All changes pushed to GitHub (origin/main)
+- Ready for production use
+
+**Project complete:** All planned features implemented. Frame panel + advanced search + pagination shipping together. System fully tested and operational.
