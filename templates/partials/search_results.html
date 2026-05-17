@@ -40,10 +40,16 @@
           </td>
           <td class="py-3 px-3 text-gray-500 text-xs hidden sm:table-cell">{{ r.duration }}</td>
           <td class="py-3 px-3">
-            <a href="{{ r.url }}" target="_blank" rel="noopener"
-               class="text-blue-400 hover:text-blue-300 text-xs underline underline-offset-2">
-              Watch
-            </a>
+            <div class="flex gap-2">
+              <a href="{{ r.url }}" target="_blank" rel="noopener"
+                 class="text-gray-400 hover:text-gray-300 text-xs underline underline-offset-2">
+                Tab
+              </a>
+              <button onclick="openVideoInFrame('{{ r.url }}', '{{ r.title | e }}')"
+                      class="text-purple-400 hover:text-purple-300 text-xs underline underline-offset-2">
+                Frame
+              </button>
+            </div>
           </td>
         </tr>
         {% endfor %}

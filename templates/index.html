@@ -11,6 +11,139 @@
     .htmx-request .htmx-indicator { display: inline-flex; }
     .htmx-request.htmx-indicator { display: inline-flex; }
     body { background-color: #070e1c; }
+
+    .video-frame-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100vh;
+      width: 0;
+      background-color: #0f172a;
+      border-left: 1px solid #1e293b;
+      transition: width 0.3s ease-in-out;
+      z-index: 40;
+      overflow: hidden;
+    }
+
+    .video-frame-close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 50;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+    }
+
+    .video-frame-panel.open .video-frame-close-btn {
+      display: block;
+    }
+
+    .video-frame-close-btn:hover {
+      background: #334155;
+      color: #f1f5f9;
+      border-color: #475569;
+    }
+
+    .video-frame-panel.open {
+      width: 40%;
+    }
+
+    @media (max-width: 1200px) {
+      .video-frame-panel.open {
+        width: 50%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .video-frame-panel.open {
+        width: 100%;
+      }
+    }
+
+    .video-frame-content {
+      padding: 1rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow: hidden;
+    }
+
+    .video-frame-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #334155;
+    }
+
+    .video-frame-title {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .video-frame-title h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      line-clamp: 1;
+      word-break: break-word;
+      margin: 0;
+    }
+
+    .video-frame-close {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .video-frame-close:hover {
+      color: #cbd5e1;
+    }
+
+    .video-frame-iframe {
+      flex: 1;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      background-color: #000;
+    }
+
+    .main-content {
+      transition: margin-right 0.3s ease-in-out;
+    }
+
+    .main-content.frame-open {
+      margin-right: 40%;
+    }
+
+    @media (max-width: 1200px) {
+      .main-content.frame-open {
+        margin-right: 50%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-content.frame-open {
+        margin-right: 100%;
+      }
+    }
   </style>
 </head>
 <body class="text-gray-100 min-h-screen font-sans">
@@ -28,10 +161,28 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M4.582 9A8 8 0 0120 15M19.419 15A8 8 0 014 9" />
         </svg>
       </button>
+      <button id="close-frame-btn" onclick="closeVideoFrame()" hidden
+              title="Close video frame"
+              class="text-gray-500 hover:text-gray-300 transition px-3 py-1.5 rounded-lg hover:bg-slate-800 text-sm font-medium ml-2">
+        Close Frame ✕
+      </button>
     </div>
   </nav>
 
-  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <!-- ── Video Frame Panel (right side) ── -->
+  <div id="video-frame-panel" class="video-frame-panel">
+    <div class="video-frame-content">
+      <div class="video-frame-header">
+        <div class="video-frame-title">
+          <h3 id="video-frame-title"></h3>
+        </div>
+      </div>
+      <iframe id="video-frame-iframe" class="video-frame-iframe" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <div id="main-content" class="main-content">
+    <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
 
     <!-- ── Search ── -->
     <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
@@ -153,7 +304,8 @@
     </a>
   </div>
 
-  </div><!-- /max-w -->
+    </div><!-- /max-w -->
+  </div><!-- /main-content -->
 
 <script>
 // ── Add selected search results to the list ──────────────────────────────────
@@ -465,6 +617,63 @@ function showToast(msg, type='ok') {
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
 }
+
+// ── Video frame panel ──────────────────────────────────────────────────────────
+function extractVideoId(url) {
+  const patterns = [
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function openVideoInFrame(url, title) {
+  const videoId = extractVideoId(url);
+  if (!videoId) {
+    showToast('Could not extract video ID from URL.', 'err');
+    return;
+  }
+
+  const panel = document.getElementById('video-frame-panel');
+  const iframe = document.getElementById('video-frame-iframe');
+  const titleEl = document.getElementById('video-frame-title');
+  const mainContent = document.getElementById('main-content');
+  const closeBtn = document.getElementById('close-frame-btn');
+
+  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+  titleEl.textContent = title;
+
+  panel.classList.add('open');
+  mainContent.classList.add('frame-open');
+  closeBtn.removeAttribute('hidden');
+}
+
+function closeVideoFrame() {
+  const panel = document.getElementById('video-frame-panel');
+  const iframe = document.getElementById('video-frame-iframe');
+  const mainContent = document.getElementById('main-content');
+  const closeBtn = document.getElementById('close-frame-btn');
+
+  panel.classList.remove('open');
+  mainContent.classList.remove('frame-open');
+  iframe.src = '';
+  closeBtn.setAttribute('hidden', '');
+}
+
+// Close frame with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const panel = document.getElementById('video-frame-panel');
+    if (panel.classList.contains('open')) {
+      closeVideoFrame();
+    }
+  }
+});
 </script>
 </body>
 </html>
