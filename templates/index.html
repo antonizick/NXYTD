@@ -161,6 +161,11 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M4.582 9A8 8 0 0120 15M19.419 15A8 8 0 014 9" />
         </svg>
       </button>
+      <button id="add-framed-btn" onclick="addFramedVideoToSelection()" hidden
+              title="Add framed video to selection list"
+              class="text-indigo-400 hover:text-indigo-300 transition px-3 py-1.5 rounded-lg hover:bg-slate-800 text-sm font-medium">
+        + Add to List
+      </button>
       <button id="close-frame-btn" onclick="closeVideoFrame()" hidden
               title="Close video frame"
               class="text-gray-500 hover:text-gray-300 transition px-3 py-1.5 rounded-lg hover:bg-slate-800 text-sm font-medium ml-2">
@@ -186,12 +191,21 @@
 
     <!-- ── Search ── -->
     <section class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800">
-      <h2 class="text-lg font-semibold text-gray-200 mb-4">Search YouTube</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-200">Search YouTube</h2>
+        <button onclick="showAdvancedHelp()"
+                title="Learn about advanced search filters"
+                class="text-gray-500 hover:text-gray-300 transition p-1.5 rounded-lg hover:bg-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      </div>
       <form hx-post="/search"
             hx-target="#search-results"
             hx-swap="innerHTML"
             hx-indicator="#search-spinner">
-        <div class="flex gap-3">
+        <div class="flex gap-3 mb-4">
           <input type="text" name="query"
                  placeholder="Search for videos, artists, playlists…"
                  class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-base
@@ -210,9 +224,111 @@
             Search
           </button>
         </div>
+
+        <!-- ── Quick Filters (Always Visible) ── -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-4">
+          <div>
+            <label class="block text-xs text-gray-400 mb-2">Duration</label>
+            <select name="duration"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm
+                           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+                           text-gray-200 transition">
+              <option value="">Any length</option>
+              <option value="duration < 360">Short (&lt; 6 min)</option>
+              <option value="duration >= 240 & duration < 1200">Medium (4-20 min)</option>
+              <option value="duration >= 1200">Long (&gt; 20 min)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-2">Upload Date</label>
+            <select name="upload_date"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm
+                           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+                           text-gray-200 transition">
+              <option value="">Any time</option>
+              <option value="upload_date > now-7d">Last week</option>
+              <option value="upload_date > now-30d">Last month</option>
+              <option value="upload_date > now-365d">Last year</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-2">Min Views</label>
+            <select name="views"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm
+                           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+                           text-gray-200 transition">
+              <option value="">Any</option>
+              <option value="view_count > 100000">100K+</option>
+              <option value="view_count > 1000000">1M+</option>
+              <option value="view_count > 10000000">10M+</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Advanced Filter (Collapsible) ── -->
+        <details class="mb-4">
+          <summary class="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-400 transition">
+            ⚙️ Advanced Filter (Boolean)
+          </summary>
+          <div class="mt-3">
+            <input type="text" name="advanced_filter"
+                   placeholder="e.g., duration > 600 & duration < 3600"
+                   class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm
+                          focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+                          placeholder-gray-600 text-gray-200 transition"
+                   autocomplete="off" />
+            <p class="text-xs text-gray-500 mt-2">Leave empty to use filter dropdowns above. Click the info button for syntax help.</p>
+          </div>
+        </details>
       </form>
       <div id="search-results" class="mt-5"></div>
     </section>
+
+    <!-- ── Advanced Help Modal ── -->
+    <div id="advanced-help-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900">
+          <h3 class="text-xl font-semibold text-gray-200">Advanced Search Syntax</h3>
+          <button onclick="closeAdvancedHelp()"
+                  class="text-gray-500 hover:text-gray-300 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-6 space-y-4 text-sm text-gray-300">
+          <div>
+            <h4 class="font-semibold text-gray-100 mb-2">Duration Operators</h4>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>duration > 300</code> — Videos longer than 5 minutes</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>duration < 60</code> — Videos shorter than 1 minute</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded text-xs"><code>duration >= 600 & duration <= 1800</code> — 10-30 minutes</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-100 mb-2">Boolean Operators</h4>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>&</code> — AND (both conditions must match)</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>|</code> — OR (either condition matches)</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded text-xs"><code>!</code> — NOT (negate a condition)</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-100 mb-2">Date Filters</h4>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>upload_date > now-7d</code> — Last 7 days</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded text-xs"><code>upload_date > now-365d</code> — Last year</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-100 mb-2">Title Filters</h4>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>title *= rock</code> — Contains "rock" (case-insensitive)</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded text-xs"><code>!title *= DJ</code> — Does NOT contain "DJ"</p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-100 mb-2">Examples</h4>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>duration > 300 & view_count > 1000000</code><br/>Longer than 5 min AND over 1M views</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded mb-2 text-xs"><code>duration < 300 | duration > 1200</code><br/>Very short OR very long videos</p>
+            <p class="font-mono bg-slate-800/50 p-3 rounded text-xs"><code>title *= rock & title *= Remix & !title *= DJ</code><br/>Contains "rock" and "Remix" but NOT "DJ"</p>
+          </div>
+          <p class="text-xs text-gray-400 pt-4 border-t border-slate-800">Note: If Advanced Filter is filled, it overrides the filter dropdowns above.</p>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Manual Add ── -->
     <div class="border-t border-slate-800"></div>
@@ -325,6 +441,26 @@ function addSelectedToList() {
     showToast(`Added ${items.length} item(s) to list.`, 'ok');
   })
   .catch(() => showToast('Failed to add items.', 'err'));
+}
+
+// ── Add framed video to selection ────────────────────────────────────────────
+function addFramedVideoToSelection() {
+  if (!_currentFramedVideoUrl) {
+    showToast('No video in frame.', 'warn');
+    return;
+  }
+  const fd = new FormData();
+  fd.append('url', _currentFramedVideoUrl);
+  fetch('/selection/add-url', {
+    method: 'POST',
+    body: fd
+  })
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('selection-container').innerHTML = html;
+    showToast('Added video to list.', 'ok');
+  })
+  .catch(() => showToast('Failed to add video.', 'err'));
 }
 
 // ── Toggle all checkboxes ────────────────────────────────────────────────────
@@ -620,23 +756,52 @@ function showToast(msg, type='ok') {
 
 // ── Video frame panel ──────────────────────────────────────────────────────────
 function extractVideoId(url) {
-  const patterns = [
-    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+  if (!url) return null;
+
+  // Remove any whitespace
+  url = url.trim();
+
+  // Try to extract v parameter (works for youtube.com/watch?v=...)
+  const vMatch = url.match(/v=([a-zA-Z0-9_-]+)/);
+  if (vMatch && vMatch[1].length >= 11) {
+    return vMatch[1].substring(0, 11);
   }
+
+  // Try youtu.be/ format
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortMatch && shortMatch[1].length >= 11) {
+    return shortMatch[1].substring(0, 11);
+  }
+
+  // Try embed format
+  const embedMatch = url.match(/embed\/([a-zA-Z0-9_-]+)/);
+  if (embedMatch && embedMatch[1].length >= 11) {
+    return embedMatch[1].substring(0, 11);
+  }
+
   return null;
 }
 
+// Store current framed video URL globally
+let _currentFramedVideoUrl = null;
+
 function openVideoInFrame(url, title) {
-  const videoId = extractVideoId(url);
-  if (!videoId) {
-    showToast('Could not extract video ID from URL.', 'err');
-    return;
+  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+  let embedUrl;
+
+  if (isYouTube) {
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      console.error('Could not extract video ID from URL:', url);
+      showToast('Could not extract video ID. Try opening in a new tab instead.', 'err');
+      return;
+    }
+    embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+    console.log('Opening YouTube video:', videoId);
+  } else {
+    // Local file path - use /files/play endpoint
+    embedUrl = `/files/play?p=${encodeURIComponent(url)}`;
+    console.log('Opening local file:', url);
   }
 
   const panel = document.getElementById('video-frame-panel');
@@ -644,13 +809,20 @@ function openVideoInFrame(url, title) {
   const titleEl = document.getElementById('video-frame-title');
   const mainContent = document.getElementById('main-content');
   const closeBtn = document.getElementById('close-frame-btn');
+  const addBtn = document.getElementById('add-framed-btn');
 
-  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`;
+  iframe.src = embedUrl;
   titleEl.textContent = title;
+  _currentFramedVideoUrl = url;
 
   panel.classList.add('open');
   mainContent.classList.add('frame-open');
   closeBtn.removeAttribute('hidden');
+  if (isYouTube) {
+    addBtn.removeAttribute('hidden');
+  } else {
+    addBtn.setAttribute('hidden', '');
+  }
 }
 
 function closeVideoFrame() {
@@ -658,11 +830,14 @@ function closeVideoFrame() {
   const iframe = document.getElementById('video-frame-iframe');
   const mainContent = document.getElementById('main-content');
   const closeBtn = document.getElementById('close-frame-btn');
+  const addBtn = document.getElementById('add-framed-btn');
 
   panel.classList.remove('open');
   mainContent.classList.remove('frame-open');
   iframe.src = '';
   closeBtn.setAttribute('hidden', '');
+  addBtn.setAttribute('hidden', '');
+  _currentFramedVideoUrl = null;
 }
 
 // Close frame with Escape key
@@ -672,6 +847,29 @@ document.addEventListener('keydown', (e) => {
     if (panel.classList.contains('open')) {
       closeVideoFrame();
     }
+    const modal = document.getElementById('advanced-help-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+      closeAdvancedHelp();
+    }
+  }
+});
+
+// ── Advanced Search Help Modal ────────────────────────────────────────────────
+function showAdvancedHelp() {
+  const modal = document.getElementById('advanced-help-modal');
+  modal.classList.remove('hidden');
+}
+
+function closeAdvancedHelp() {
+  const modal = document.getElementById('advanced-help-modal');
+  modal.classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+  const modal = document.getElementById('advanced-help-modal');
+  if (e.target === modal) {
+    closeAdvancedHelp();
   }
 });
 </script>

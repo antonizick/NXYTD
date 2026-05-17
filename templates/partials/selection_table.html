@@ -43,10 +43,16 @@
           </td>
           <td class="py-3 px-3 text-gray-500 text-xs hidden sm:table-cell">{{ item.duration or '—' }}</td>
           <td class="py-3 px-3 hidden md:table-cell">
-            <a href="{{ item.url }}" target="_blank" rel="noopener"
-               class="text-blue-400 hover:text-blue-300 underline underline-offset-2 text-xs truncate block max-w-xs">
-              {{ item.url }}
-            </a>
+            <div class="flex gap-2 items-center">
+              <a href="{{ item.url }}" target="_blank" rel="noopener"
+                 class="text-blue-400 hover:text-blue-300 underline underline-offset-2 text-xs truncate flex-1 max-w-xs">
+                {{ item.url }}
+              </a>
+              <button onclick='openVideoInFrame({{ item.url | tojson }}, {{ item.title | tojson }})'
+                      class="text-purple-400 hover:text-purple-300 text-xs underline underline-offset-2 whitespace-nowrap flex-shrink-0">
+                Frame
+              </button>
+            </div>
           </td>
           <td class="py-3 px-3 text-center">
             <button onclick="deleteSelectionItem('{{ item.id }}')"

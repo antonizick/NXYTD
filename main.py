@@ -151,10 +151,38 @@ async def view_log() -> PlainTextResponse:
 # ── search ────────────────────────────────────────────────────────────────────
 
 @app.post("/search", response_class=HTMLResponse)
-async def search(request: Request, query: str = Form(...)) -> HTMLResponse:
+async def search(
+    request: Request,
+    query: str = Form(...),
+    duration: str = Form(""),
+    upload_date: str = Form(""),
+    views: str = Form(""),
+    advanced_filter: str = Form(""),
+) -> HTMLResponse:
+    # Build match-filters argument
+    filters = []
+
+    if advanced_filter.strip():
+        # Use advanced filter if provided
+        filters.append(advanced_filter.strip())
+    else:
+        # Build from dropdown filters
+        if duration:
+            filters.append(duration)
+        if upload_date:
+            filters.append(upload_date)
+        if views:
+            filters.append(views)
+
+    match_filter_arg = ""
+    if filters:
+        # Combine multiple filters with AND (&)
+        match_filter_arg = f'--match-filters "{" & ".join(filters)}"'
+
     cmd = (
         f'yt-dlp --proxy "{PROXY}" '
-        f'"ytsearch15:{query}" '
+        f'ytsearch30:{shlex.quote(query)} '
+        f'{match_filter_arg} '
         '--dump-json --flat-playlist --no-download 2>/dev/null'
     )
     results: list[dict] = []
